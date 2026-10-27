@@ -1,0 +1,53 @@
+name: Build CoupleSpace for server
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      NUXT_PUBLIC_SUPABASE_URL: ${{ secrets.NUXT_PUBLIC_SUPABASE_URL }}
+      NUXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NUXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NUXT_PUBLIC_TURN_URLS: ${{ secrets.NUXT_PUBLIC_TURN_URLS }}
+      NUXT_PUBLIC_TURN_USERNAME: ${{ secrets.NUXT_PUBLIC_TURN_USERNAME }}
+      NUXT_PUBLIC_TURN_CREDENTIAL: ${{ secrets.NUXT_PUBLIC_TURN_CREDENTIAL }}
+      NUXT_PUBLIC_ZEGO_APP_ID: ${{ secrets.NUXT_PUBLIC_ZEGO_APP_ID }}
+      NUXT_PUBLIC_ZEGO_APPSIGN: ${{ secrets.NUXT_PUBLIC_ZEGO_APPSIGN }}
+      NUXT_PUBLIC_ZEGO_SERVER: ${{ secrets.NUXT_PUBLIC_ZEGO_SERVER }}
+      NUXT_PUBLIC_AMAP_KEY: ${{ secrets.NUXT_PUBLIC_AMAP_KEY }}
+      NUXT_PUBLIC_AMAP_SECURITY_CODE: ${{ secrets.NUXT_PUBLIC_AMAP_SECURITY_CODE }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Generate static site
+        run: npm run generate
+
+      - name: Package static site
+        run: tar -czf couplespace-site.tar.gz -C .output/public .
+
+      - name: Upload server deployment package
+        uses: actions/upload-artifact@v4
+        with:
+          name: couplespace-site
+          path: couplespace-site.tar.gz
+          if-no-files-found: error
